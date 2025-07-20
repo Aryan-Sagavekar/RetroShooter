@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -21,18 +22,38 @@ public class RandomGenerator
 {
     private static HashSet<Vector2Int> map;
 
-    public static HashSet<Vector2Int> GenerateRandomMap(Vector2Int mapSize, int minRoomSize, int maxRoomSize)
+    public static KeyValuePair<HashSet<Vector2Int>, Dictionary<Vector2Int, string>> GenerateRandomMap(Vector2Int mapSize, int minRoomSize, int maxRoomSize, List<Tile> roomTiles)
     {
         map = new HashSet<Vector2Int>();
+        Dictionary<Vector2Int, string> detailedMap = new Dictionary<Vector2Int, string>();
         BSPNode root = new BSPNode(new RectInt(0,0, mapSize.x, mapSize.y));
         List<RectInt> rooms = new List<RectInt>();
         SplitSpace(root, minRoomSize);
 
         CreateRoom(root, rooms, minRoomSize, maxRoomSize);
 
+        if (roomTiles != null)
+        {
+            foreach(var room in rooms)
+            {
+                WFCGenerator wfcGenerator = new WFCGenerator(room.width, room.height, roomTiles, 1968168);
+                Cell[,] randomRoom = wfcGenerator.Generate();
+
+                for (int j = 0; j < room.height; j++)
+                    for (int i = 0; i < room.width; i++)
+                    {
+                        int index = randomRoom[i, j].options[0];
+                        if (!detailedMap.ContainsKey(new Vector2Int(i + room.x, j + room.y)))
+                        {
+                            detailedMap.Add(new Vector2Int(i + room.x, j + room.y), wfcGenerator.GetSymbolForTile(index));
+                        }
+                    }
+            }
+        }
+
         ConnectRooms(rooms);
 
-        return map;
+        return new KeyValuePair<HashSet<Vector2Int>, Dictionary<Vector2Int, string>>(map, detailedMap);
     }
 
     private static void SplitSpace(BSPNode node, int minRoomSize)

@@ -35,8 +35,8 @@ public class Bullet : MonoBehaviour
                 enemy.TakeDamage(damage); // Call the TakeDamage method on the enemy
             }
         // Destroy the projectile on any collision
-            Destroy(gameObject);
         }
+        Destroy(gameObject);
 
     }
 

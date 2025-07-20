@@ -1,262 +1,204 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using System.Linq;
-
-public enum Direction { North, South, East, West }
-
-[Serializable]
-public class WFCTile
-{
-    public string name;
-    public GameObject prefab;
-
-    public string northEdge;
-    public string southEdge;
-    public string eastEdge;
-    public string westEdge;
-
-    public Dictionary<Direction, string> GetEdges()
-    {
-        return new Dictionary<Direction, string>
-        {
-            { Direction.North, northEdge },
-            { Direction.South, southEdge },
-            { Direction.East, eastEdge },
-            { Direction.West, westEdge }
-        };
-    }
-    public WFCTile Rotate90()
-    {
-        return new WFCTile
-        {
-            name = name + "_R",
-            prefab = prefab,
-            northEdge = westEdge,
-            eastEdge = northEdge,
-            southEdge = eastEdge,
-            westEdge = southEdge
-        };
-    }
-}
+using Random = UnityEngine.Random;
 
 public class Cell
 {
-    public List<WFCTile> possibleTiles;
-    public bool Collapsed => possibleTiles.Count == 1;
+    public List<int> options;
+    public bool collapsed;
+    public bool isChecked;
+    public int index;
 
-    public Cell(List<WFCTile> allTiles)
+    public Cell(List<Tile> tiles, int index)
     {
-        possibleTiles = new List<WFCTile>(allTiles);
+        this.options = new List<int>(tiles.Count);
+        for(int i=0; i < tiles.Count; i++)
+        {
+            this.options.Add(i);
+        }
+
+        this.collapsed = false;
+        this.isChecked = false;
+        this.index = index;
     }
 }
+
 
 public class WFCGenerator
 {
     private int width, height;
-    private Cell[,] cells;
-    private List<WFCTile> tileSet;
+    private Cell[,] grid;
+    private List<Tile> tileSet;
 
-    public WFCGenerator(int width, int height, Cell[,] cells, List<WFCTile> tiles)
+    public WFCGenerator(int width, int height, List<Tile> tiles, int? seed)
     {
+        if (seed.HasValue)
+            UnityEngine.Random.InitState(seed.Value);
+
         this.width = width;
         this.height = height;
         this.tileSet = tiles;
 
-        cells = new Cell[width, height];
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-                cells[x, y] = new Cell(tileSet);
-        }
-    }
-
-    public void Generate(Vector2Int offset, Transform parent)
-    {
-        while(true)
-        {
-            Vector2Int? pos = Collapse();
-            if (pos == null) break;
-            Propogate(pos.Value);
-        }
-
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
-            {
-                WFCTile tile = cells[x, y].possibleTiles[0];
-                Vector3 worldPos = new Vector3(offset.x + x, 0f, offset.y + y);
-                GameObject.Instantiate(tile.prefab, worldPos, Quaternion.identity, parent);
+        grid = new Cell[width, height];
+        int count = 0;
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+            { 
+                grid[x, y] = new Cell(tileSet, count);  count++; 
             }
     }
 
-    public void Generate(Texture2D tileset, int tileSize, GameObject basePrefab, Vector2Int offset, Transform parent)
+    public string GetSymbolForTile(int cellIndex)
     {
-        var sliced = SliceTileset(tileset, tileSize);
-        var tileSet = BuildTileSetFromTextures(sliced, basePrefab);
-        this.tileSet = tileSet;
+        Color centerColor = tileSet[cellIndex].img.GetPixel(75, 75);
 
-        cells = new Cell[width, height];
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
-                cells[x, y] = new Cell(tileSet);
+        centerColor.r = Mathf.Round(centerColor.r);
+        centerColor.g = Mathf.Round(centerColor.g);
+        centerColor.b = Mathf.Round(centerColor.b);
 
-        Generate(offset, parent);
-    }
-
-    private List<Texture2D> SliceTileset(Texture2D tileset, int tileSize)
-    {
-        List<Texture2D> tiles = new List<Texture2D>();
-        int tilesX = tileset.width / tileSize;
-        int tilesY = tileset.height / tileSize;
-
-        for (int y = 0; y < tilesY; y++)
-            for (int x = 0; x < tilesX; x++)
-            {
-                Texture2D tile = new Texture2D(tileSize, tileSize);
-                tile.SetPixels(tileset.GetPixels(x * tileSize, y * tileSize, tileSize, tileSize));
-                tile.Apply();
-                tile.name = $"tile_{x}_{y}";
-                tiles.Add(tile);
-            }
-
-        return tiles;
-    }
-
-    private List<WFCTile> BuildTileSetFromTextures(List<Texture2D> tiles, GameObject basePrefab)
-    {
-        List<WFCTile> result = new List<WFCTile>();
-
-        foreach (var tex in tiles)
+        if (centerColor == Color.black)
         {
-            WFCTile tile = new WFCTile
-            {
-                name = tex.name,
-                prefab = basePrefab,
-                northEdge = GetEdgeSignature(tex, Direction.North),
-                southEdge = GetEdgeSignature(tex, Direction.South),
-                eastEdge = GetEdgeSignature(tex, Direction.East),
-                westEdge = GetEdgeSignature(tex, Direction.West)
-            };
-
-            result.Add(tile);
-            result.Add(tile.Rotate90());
+            return "H";
+        } else if (centerColor == Color.red)
+        {
+            return "R";
+        } else if (centerColor == Color.green)
+        {
+            return "I";
+        } else if (centerColor == Color.blue)
+        {
+            return "P";
         }
 
-        return result;
+        return "E";
     }
 
-    private string GetEdgeSignature(Texture2D tex, Direction dir)
+    public Cell[,] Generate()
     {
-        int size = tex.width;
-        Color[] edgePixels = dir switch
+        while (true)
         {
-            Direction.North => tex.GetPixels(0, size - 1, size, 1),
-            Direction.South => tex.GetPixels(0, 0, size, 1),
-            Direction.East => tex.GetPixels(size - 1, 0, 1, size),
-            Direction.West => tex.GetPixels(0, 0, 1, size),
-            _ => new Color[0]
-        };
+            List<Cell> gridList = new List<Cell>();
+            foreach (Cell cell in grid)
+            {
+                if (!cell.collapsed)
+                    gridList.Add(cell);
+            }
 
-        return string.Join("|", edgePixels.Select(p => ((int)(p.r * 255)).ToString("X2") + ((int)(p.g * 255)).ToString("X2") + ((int)(p.b * 255)).ToString("X2")));
+            if (gridList.Count == 0)
+            {
+                Debug.Log("All cells collapsed. WFC complete.");
+                break;
+            }
+
+            gridList.Sort((a, b) => a.options.Count.CompareTo(b.options.Count));
+
+            int minOptions = gridList[0].options.Count;
+            int stopIndex = gridList.FindIndex(cell => cell.options.Count > minOptions);
+            if (stopIndex != -1)
+            {
+                gridList = gridList.GetRange(0, stopIndex);
+            }
+
+            Cell chosenCell = gridList[Random.Range(0, gridList.Count)];
+            chosenCell.collapsed = true;
+            int pick = chosenCell.options[Random.Range(0, chosenCell.options.Count)];
+            chosenCell.options = new List<int> { pick };
+
+            Debug.Log("Collapsed one cell. Remaining uncollapsed: " + gridList.Count);
+
+            reduceEntropy(chosenCell, 0);
+        }
+
+        return grid;
     }
 
-    private Vector2Int? Collapse()
+    public void reduceEntropy(Cell pickedCell, int depth)
     {
-        List<Vector2Int> candidates = new List<Vector2Int>();
-        int minEntropy = int.MaxValue;
+        if (depth > 2) return;
 
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
+        if (pickedCell.isChecked) return;
+
+        int i = (pickedCell.index % width);
+        int j = (pickedCell.index / width);
+
+        // Right
+        if (i + 1 < width)
+        {
+            Cell rightCell = grid[i + 1, j];
+            if (rightCell != null && !rightCell.collapsed)
             {
-                var cell = cells[x, y];
-                if (cell.Collapsed) continue;
-
-                //TODO: Instead of just taking the count we can use a heuristic function
-                int entropy = cell.possibleTiles.Count;
-                if (entropy < minEntropy)
+                List<int> validOptions = new List<int>();
+                foreach (var option in pickedCell.options)
                 {
-                    minEntropy = entropy;
-                    candidates.Clear();
+                    validOptions.AddRange(tileSet[option].neighbors[Dir.Right]);
                 }
 
-                if (entropy == minEntropy)
-                    candidates.Add(new Vector2Int(x, y));
-            }
-
-        if (candidates.Count == 0) return null;
-
-        var chosen = candidates[UnityEngine.Random.Range(0, candidates.Count)];
-        var chosenCell = cells[chosen.x, chosen.y];
-        var selectedTile = chosenCell.possibleTiles[UnityEngine.Random.Range(0, chosenCell.possibleTiles.Count)];
-        chosenCell.possibleTiles = new List<WFCTile> { selectedTile };
-
-        return chosen;
-    }
-
-    private void Propogate(Vector2Int start)
-    {
-        Queue<Vector2Int> toPropogate = new Queue<Vector2Int>();
-        toPropogate.Enqueue(start);
-
-        while(toPropogate.Count > 0)
-        {
-            Vector2Int current = toPropogate.Dequeue();
-            var currentTile = cells[current.x, current.y].possibleTiles[0];
-
-            foreach (Direction dir in Enum.GetValues(typeof(Direction))) 
-            {
-                Vector2Int neighbourPos = GetNeighbourPosition(current, dir);
-                if (!IsInBounds(neighbourPos)) continue;
-
-                var neighbourCell = cells[neighbourPos.x, neighbourPos.y];
-                if (neighbourCell.Collapsed) continue;
-
-                string requiredEdge = currentTile.GetEdges()[dir];
-                Direction oppositeDir = Opposite(dir);
-
-                var validTiles = neighbourCell.possibleTiles
-                .Where(t => t.GetEdges()[oppositeDir] == requiredEdge)
-                .ToList();
-
-                if (validTiles.Count < neighbourCell.possibleTiles.Count)
+                if (validOptions.Count > 0)
                 {
-                    neighbourCell.possibleTiles = validTiles;
-                    toPropogate.Enqueue(neighbourPos);
+                    rightCell.options.ForEach(option => validOptions.Contains(option));
+                    reduceEntropy(rightCell, depth + 1);
+                }
+            }
+        } 
+        // Left
+        if (i - 1 >= 0)
+        {
+            Cell leftCell = grid[i - 1, j];
+            if (leftCell != null && !leftCell.collapsed)
+            {
+                List<int> validOptions = new List<int>();
+                foreach (var option in pickedCell.options)
+                {
+                    validOptions.AddRange(tileSet[option].neighbors[Dir.Left]);
                 }
 
-                if (neighbourCell.possibleTiles.Count == 0)
-                    throw new Exception($"Contradiction at {neighbourPos}");
+                if (validOptions.Count > 0)
+                {
+                    leftCell.options.ForEach(option => validOptions.Contains(option));
+                    reduceEntropy(leftCell, depth + 1);
+                }
             }
         }
-    }
-
-    private Vector2Int GetNeighbourPosition(Vector2Int pos, Direction dir)
-    {
-        return dir switch
+        // Up
+        if (j - 1 >= 0)
         {
-            Direction.North => new Vector2Int(pos.x, pos.y + 1),
-            Direction.South => new Vector2Int(pos.x, pos.y - 1),
-            Direction.East => new Vector2Int(pos.x + 1, pos.y),
-            Direction.West => new Vector2Int(pos.x - 1, pos.y + 1),
-            _ => pos,
-        };
-    }
+            Cell upCell = grid[i, j - 1];
+            if (upCell != null && !upCell.collapsed)
+            {
+                List<int> validOptions = new List<int>();
+                foreach (var option in pickedCell.options)
+                {
+                    validOptions.AddRange(tileSet[option].neighbors[Dir.Up]);
+                }
 
-    private bool IsInBounds(Vector2Int pos)
-    {
-        return pos.x >= 0 && pos.y >= 0 && pos.x <= width && pos.y <= height;
-    }
-
-    private Direction Opposite(Direction dir)
-    {
-        return dir switch
+                if (validOptions.Count > 0)
+                {
+                    upCell.options.ForEach(option => validOptions.Contains(option));
+                    reduceEntropy(upCell, depth + 1);
+                }
+            }
+        }
+        // Down
+        if (j + 1 < height)
         {
-            Direction.North => Direction.South,
-            Direction.East => Direction.West,
-            Direction.South => Direction.North,
-            Direction.West => Direction.East,
-            _ => dir,
-        };
+            Cell downCell = grid[i, j + 1];
+            if (downCell != null && !downCell.collapsed)
+            {
+                List<int> validOptions = new List<int>();
+                foreach (var option in pickedCell.options)
+                {
+                    validOptions.AddRange(tileSet[option].neighbors[Dir.Down]);
+                }
+
+                if (validOptions.Count > 0)
+                {
+                    downCell.options.ForEach(option => validOptions.Contains(option));
+                    reduceEntropy(downCell, depth + 1);
+                }
+            }
+        }
     }
 }
