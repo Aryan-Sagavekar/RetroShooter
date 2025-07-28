@@ -36,7 +36,7 @@ public class RandomGenerator
         {
             foreach(var room in rooms)
             {
-                WFCGenerator wfcGenerator = new WFCGenerator(room.width, room.height, roomTiles, 1968168);
+                WFCGenerator wfcGenerator = new WFCGenerator(room.width, room.height, roomTiles, 18415541);
                 Cell[,] randomRoom = wfcGenerator.Generate();
 
                 for (int j = 0; j < room.height; j++)
