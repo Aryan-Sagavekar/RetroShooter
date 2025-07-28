@@ -5,6 +5,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
     MapGenerator mapGenerator;
+    public GameObject currentPlayer;
 
     void Awake()
     {

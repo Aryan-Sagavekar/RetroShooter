@@ -51,9 +51,37 @@ public class RandomGenerator
             }
         }
 
-        ConnectRooms(rooms);
+        ConnectRooms(rooms, detailedMap);
+
+        CalculateEntitySpawns(rooms, detailedMap);
 
         return new KeyValuePair<HashSet<Vector2Int>, Dictionary<Vector2Int, string>>(map, detailedMap);
+    }
+
+    private static void CalculateEntitySpawns(List<RectInt> rooms, Dictionary<Vector2Int, string> detailedMap)
+    {
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            if (i == 0)
+            {
+                detailedMap[new Vector2Int(rooms[0].x + rooms[0].width / 2, rooms[0].y + rooms[0].height / 2)] = "PS";
+            }
+            else
+            {
+                //TODO: Change the logic of randomely generating enemy count per room
+                int enemyCount = Random.Range(0f, 1f) <= 0.02f ? 15 : Mathf.Clamp(i, 1 ,5);
+
+                for (int j = 0; j < enemyCount; j++)
+                {
+                    Vector2Int randomPos = new Vector2Int(
+                        Random.Range(rooms[i].xMin + 1, rooms[i].xMax - 1),
+                        Random.Range(rooms[i].yMin + 1, rooms[i].yMax - 1)
+                    );
+
+                    detailedMap[randomPos] = "ES";
+                }
+            }
+        }
     }
 
     private static void SplitSpace(BSPNode node, int minRoomSize)
@@ -102,15 +130,30 @@ public class RandomGenerator
         }
     }
 
-    private static void ConnectRooms(List<RectInt> rooms)
+    private static void ConnectRooms(List<RectInt> rooms, Dictionary<Vector2Int, string> detailedMap)
     {
+        foreach(RectInt room in rooms)
+        {
+            for(int x = room.xMin; x< room.xMax; x++)
+            {
+                detailedMap[new Vector2Int(x, room.yMin)] = "W";
+                detailedMap[new Vector2Int(x, room.yMax)] = "W";
+            }
+
+            for (int y = room.yMin; y < room.yMax; y++)
+            {
+                detailedMap[new Vector2Int(room.xMin, y)] = "W";
+                detailedMap[new Vector2Int(room.xMax, y)] = "W";
+            }
+        }
+
         for (int i = 0; i < rooms.Count - 1; i++)
         {
-            CreateCorridoor(rooms[i], rooms[i+1]);
+            CreateCorridoor(rooms[i], rooms[i+1], detailedMap);
         }
     }
 
-    private static void CreateCorridoor(RectInt roomA, RectInt roomB)
+    private static void CreateCorridoor(RectInt roomA, RectInt roomB, Dictionary<Vector2Int, string> detailedMap)
     {
         Vector2Int centerA = new Vector2Int(roomA.x + roomA.width / 2, roomA.y + roomA.height / 2);
         Vector2Int centerB = new Vector2Int(roomB.x + roomB.width / 2, roomB.y + roomB.height / 2);
@@ -121,12 +164,27 @@ public class RandomGenerator
         while (current.x != centerB.x)
         {
             map.Add(current);
+            if (detailedMap.ContainsKey(current))
+            {
+                detailedMap[current] = "C";
+            } else
+            {
+                detailedMap.Add(current, "C");
+            }
             current.x += current.x < centerB.x ? 1 : -1;
         }
 
         while (current.y != centerB.y)
         {
             map.Add(current);
+            if (detailedMap.ContainsKey(current))
+            {
+                detailedMap[current] = "C";
+            }
+            else
+            {
+                detailedMap.Add(current, "C");
+            }
             current.y += current.y < centerB.y ? 1 : -1;
         }
 

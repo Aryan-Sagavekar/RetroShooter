@@ -35,8 +35,8 @@ public class WFCGenerator
 
     public WFCGenerator(int width, int height, List<Tile> tiles, int? seed)
     {
-        if (seed.HasValue)
-            UnityEngine.Random.InitState(seed.Value);
+        //    if (seed.HasValue)
+        //        UnityEngine.Random.InitState(seed.Value);
 
         this.width = width;
         this.height = height;

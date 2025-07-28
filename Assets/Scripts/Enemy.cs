@@ -5,6 +5,7 @@ public class Enemy : MonoBehaviour
     [Header("Enemy Stats")]
     [SerializeField] private float maxHealth = 10f;
     [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float damage = 10f;
 
     private float currentHealth;
     private GameObject player; // Reference to the player GameObject
@@ -14,7 +15,7 @@ public class Enemy : MonoBehaviour
         currentHealth = maxHealth;
         // Find the player. Ensure your Player GameObject is active and in the scene.
         // You might tag your player as "Player" for a more robust lookup.
-        player = GameObject.FindGameObjectWithTag("Player");
+        player = GameManager.Instance.currentPlayer;
 
         if (player == null)
         {
@@ -75,6 +76,14 @@ public class Enemy : MonoBehaviour
         Debug.Log(gameObject.name + " died!");
         // --- TODO: Add death animation, sound, score, drop items, etc. ---
         Destroy(gameObject);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.tag == "Player")
+        {
+            collision.gameObject.GetComponent<Health>().TakeDamage(damage);
+        }
     }
 
     // Optional: Draw a line in the editor to show the enemy's path to player

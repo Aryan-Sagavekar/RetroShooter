@@ -22,6 +22,7 @@ public class MapGenerator : MonoBehaviour
 
     [Header("Required Objects")]
     [SerializeField] private GameObject floorPrefab;
+    [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private GameObject collectablePrefab;
     [SerializeField] private GameObject harmfulObjectPrefab;
     [SerializeField] private GameObject wallPrefab;
@@ -82,7 +83,6 @@ public class MapGenerator : MonoBehaviour
         KeyValuePair<HashSet<Vector2Int>, Dictionary<Vector2Int, string>> completeMap = RandomGenerator.GenerateRandomMap(mapSize, minRoomSize, maxRoomSize, newTiles);
         HashSet<Vector2Int> floorPositions = completeMap.Key;
         Dictionary<Vector2Int, string> positionValues = completeMap.Value;
-        HashSet<Vector2Int> spawnPositions = new HashSet<Vector2Int>();
 
         foreach (var position in floorPositions)
         {
@@ -91,22 +91,49 @@ public class MapGenerator : MonoBehaviour
             {
                 switch (positionValues[position])
                 {
+                    case "PS":
+                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        GameObject character = Instantiate(player, worldPos + new Vector3(0f, 0.2f, 0f), Quaternion.identity);
+                        GameObject.Find("CameraRig").GetComponent<CameraFollow>().SetTarget(character.transform);
+                        GameManager.Instance.currentPlayer = character;
+                        break;
+                    case "ES":
+                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        Instantiate(enemyPrefab, worldPos + new Vector3(0f, 0.2f, 0f), Quaternion.identity);
+                        break;
+                    case "C":
+                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        break;
                     case "P":
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
-                        spawnPositions.Add(position);
                         break;
                     case "I":
-                        Instantiate(collectablePrefab, worldPos + new Vector3(0, 0.4f, 0), Quaternion.identity, floorParent);
+                        Instantiate(collectablePrefab, worldPos + new Vector3(0, 0.4f, 0), Quaternion.identity);
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
                     case "H":
                         //Instantiate(floorPrefab, worldPos - new Vector3(0, 1f, 0), Quaternion.identity, floorParent);
+                        if (Random.Range(0.0f, 1f) >= 0.50f)
+                        {
+                            Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        }
                         break;
                     case "E":
-                        Instantiate(wallPrefab, worldPos + new Vector3(0, 1, 0), Quaternion.identity, floorParent);
+                        if (Random.Range(0.0f, 1f) <= 0.80f)
+                        {
+                            Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        } else
+                        {
+                            Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                            Instantiate(wallPrefab, worldPos + new Vector3(0, 0.2f, 0), Quaternion.identity, floorParent);
+                        }
+                        break;
+                    case "W":
+                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        Instantiate(wallPrefab, worldPos + new Vector3(0, 0.2f, 0), Quaternion.identity, floorParent);
                         break;
                     case "R":
-                        Instantiate(harmfulObjectPrefab, worldPos + new Vector3(0, 0.6f, 0), Quaternion.identity, floorParent);
+                        Instantiate(harmfulObjectPrefab, worldPos + new Vector3(0, 1.5f, 0), Quaternion.Euler(90, 0, 0), floorParent);
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
 
@@ -119,13 +146,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        // TODO: Dont spawn the player anywhere. spawn him in the 1st room
-        int choice = Random.Range(0, spawnPositions.Count);
-        Vector3 playerPosition = new Vector3(spawnPositions.ElementAt(choice).x, 1f, spawnPositions.ElementAt(choice).y);
-
-        GameObject character = Instantiate(player, playerPosition, Quaternion.identity);
-
-        GameObject.Find("CameraRig").GetComponent<CameraFollow>().SetTarget(character.transform);
+        
     }
 
     protected HashSet<Vector2Int> RandomWalk()
