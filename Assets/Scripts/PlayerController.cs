@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Define the enum outside the class, but within the namespace (if you have one)
 public enum FiringMode
 {
     SemiAutomatic,
@@ -30,11 +29,10 @@ public class PlayerController : MonoBehaviour
     private Rigidbody rb;
     private Camera mainCamera;
 
-    private float nextAvailableShotTime; // When the next individual shot can happen
-    private bool canFireSemiAuto = true; // For semi-auto: true if button was released
-    private bool isFiringInputHeld = false; // To track if fire button is held down
-    private int bulletsFiredInBurst; // Counter for burst mode
-    private float burstEndTime; // When burst cooldown finishes
+    private float nextAvailableShotTime;
+    private bool canFireSemiAuto = true;
+    private bool isFiringInputHeld = false;
+    private int bulletsFiredInBurst;
 
     private void Awake()
     {
@@ -44,13 +42,12 @@ public class PlayerController : MonoBehaviour
 
         if (mainCamera == null)
         {
-            Debug.LogError("PlayerController: Main camera not found. Please tag your main camera as 'MainCamera'.");
+            UnityEngine.Debug.LogError("PlayerController: Main camera not found. Please tag your main camera as 'MainCamera'.");
         }
 
         playerControls.Player.Move.performed += ctx => movementInput = ctx.ReadValue<Vector2>();
         playerControls.Player.Move.canceled += ctx => movementInput = Vector2.zero;
 
-        // Subscribe to Fire actions
         playerControls.Player.Shoot.performed += ctx => OnFirePerformed();
         playerControls.Player.Shoot.canceled += ctx => OnFireCanceled();
     }
@@ -70,11 +67,10 @@ public class PlayerController : MonoBehaviour
         HandleMovement();
     }
 
-    private void Update() // Changed from FixedUpdate to Update for non-physics related checks (like input holding)
+    private void Update()
     {
         HandleAiming();
 
-        // Handle Automatic fire here, as it needs to check input state continuously
         if (currentFiringMode == FiringMode.Automatic && isFiringInputHeld)
         {
             TryFire();
@@ -83,74 +79,64 @@ public class PlayerController : MonoBehaviour
 
     private void OnFirePerformed()
     {
-        isFiringInputHeld = true; // Input is now held down
-
+        isFiringInputHeld = true;
         switch (currentFiringMode)
         {
             case FiringMode.SemiAutomatic:
                 if (canFireSemiAuto)
                 {
                     TryFire();
-                    canFireSemiAuto = false; // Prevent firing again until button is released
+                    canFireSemiAuto = false;
                 }
                 break;
             case FiringMode.Burst:
-                if (Time.time >= nextAvailableShotTime) // Only start burst if cooldown is over
+                if (Time.time >= nextAvailableShotTime)
                 {
                     StartBurstFire();
                 }
                 break;
-                // Automatic is handled in Update()
+                // Automatic handled in Update()
         }
     }
 
     private void OnFireCanceled()
     {
-        isFiringInputHeld = false; // Input is no longer held
-        canFireSemiAuto = true; // Allow semi-auto to fire again on next press
+        isFiringInputHeld = false;
+        canFireSemiAuto = true;
     }
 
-    // This method tries to fire a single projectile based on baseFireRate
     private void TryFire()
     {
         if (projectilePrefab == null || firePoint == null)
         {
-            Debug.LogWarning("Projectile Prefab or Fire Point not assigned in PlayerController!");
+            UnityEngine.Debug.LogWarning("Projectile Prefab or Fire Point not assigned in PlayerController!");
             return;
         }
 
         if (Time.time >= nextAvailableShotTime)
         {
             FireProjectile();
-            nextAvailableShotTime = Time.time + baseFireRate; // Set cooldown for next individual shot
+            nextAvailableShotTime = Time.time + baseFireRate;
         }
     }
 
     private void FireProjectile()
     {
-        // Get the direction the player is currently facing
         Vector3 fireDirection = transform.forward;
 
-        // Instantiate the projectile
         GameObject bulletGO = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-
         Bullet bullet = bulletGO.GetComponent<Bullet>();
         if (bullet != null)
-        {
             bullet.Initialize(fireDirection);
-        }
         else
-        {
-            Debug.LogError("Projectile prefab does not have a Projectile script attached!");
-        }
+            UnityEngine.Debug.LogError("Projectile prefab does not have a Bullet script attached!");
     }
 
     private void StartBurstFire()
     {
         bulletsFiredInBurst = 0;
-        InvokeRepeating(nameof(FireBurstBullet), 0f, burstInterval); // Start firing burst bullets
-        // Set nextAvailableShotTime to prevent new bursts until cooldown is over
-        nextAvailableShotTime = Time.time + burstCooldown; // This is the cooldown for the *next* burst
+        InvokeRepeating(nameof(FireBurstBullet), 0f, burstInterval);
+        nextAvailableShotTime = Time.time + burstCooldown;
     }
 
     private void FireBurstBullet()
@@ -162,25 +148,20 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            CancelInvoke(nameof(FireBurstBullet)); // Stop the burst
+            CancelInvoke(nameof(FireBurstBullet));
         }
     }
 
     private void HandleMovement()
     {
-        Vector3 cameraForward = mainCamera.transform.forward;
-        cameraForward.y = 0;
-        cameraForward.Normalize();
+        // Local (relative to player) movement control
+        Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y);
 
-        Vector3 cameraRight = mainCamera.transform.right;
-        cameraRight.y = 0;
-        cameraRight.Normalize();
-
-        Vector3 moveDirection = (cameraForward * movementInput.y + cameraRight * movementInput.x).normalized;
-
-        if (moveDirection != Vector3.zero)
+        if (moveDirection.sqrMagnitude > 0.01f)
         {
-            rb.linearVelocity = new Vector3(moveDirection.x * moveSpeed, rb.linearVelocity.y, moveDirection.z * moveSpeed);
+            moveDirection = moveDirection.normalized;
+            Vector3 worldMoveDirection = transform.TransformDirection(moveDirection);
+            rb.linearVelocity = new Vector3(worldMoveDirection.x * moveSpeed, rb.linearVelocity.y, worldMoveDirection.z * moveSpeed);
         }
         else
         {
@@ -190,22 +171,22 @@ public class PlayerController : MonoBehaviour
 
     private void HandleAiming()
     {
-        if (Mouse.current != null)
+        if (Mouse.current == null || mainCamera == null)
+            return;
+
+        Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        Plane groundPlane = new Plane(Vector3.up, transform.position);
+
+        if (groundPlane.Raycast(ray, out float enter))
         {
-            Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-            Plane groundPlane = new Plane(Vector3.up, transform.position);
+            Vector3 hitPoint = ray.GetPoint(enter);
+            Vector3 directionToLook = hitPoint - transform.position;
+            directionToLook.y = 0;
 
-            if (groundPlane.Raycast(ray, out float enter))
+            if (directionToLook.sqrMagnitude > 0.001f)
             {
-                Vector3 hitPoint = ray.GetPoint(enter);
-                Vector3 directionToLook = hitPoint - transform.position;
-                directionToLook.y = 0;
-
-                if (directionToLook != Vector3.zero)
-                {
-                    Quaternion targetRotation = Quaternion.LookRotation(directionToLook);
-                    transform.rotation = targetRotation; // Instant rotation for exact aiming
-                }
+                Quaternion targetRotation = Quaternion.LookRotation(directionToLook);
+                transform.rotation = targetRotation;
             }
         }
     }
