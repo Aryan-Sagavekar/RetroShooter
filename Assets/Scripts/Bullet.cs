@@ -16,7 +16,6 @@ public class Bullet : MonoBehaviour
 
     public void Initialize(Vector3 direction)
     {
-        // Set the projectile's velocity
         if (rb != null)
         {
             rb.linearVelocity = direction.normalized * speed;
@@ -25,18 +24,15 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // Check if the collided object has the "Enemy" tag
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            // Try to get the Enemy component from the collided object
             Enemy enemy = collision.gameObject.GetComponent<Enemy>();
             if (enemy != null)
             {
-                enemy.TakeDamage(damage); // Call the TakeDamage method on the enemy
+                enemy.TakeDamage(damage);
             }
-        // Destroy the projectile on any collision
+            Destroy(gameObject);
         }
-        Destroy(gameObject);
 
     }
 
@@ -58,6 +54,6 @@ public class Bullet : MonoBehaviour
         // Or if you only want it to destroy on specific types of collisions.
 
         // For now, simple destroy on any collision
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 }

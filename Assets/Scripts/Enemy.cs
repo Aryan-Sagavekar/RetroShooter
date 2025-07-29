@@ -1,98 +1,105 @@
+using System;
 using UnityEngine;
+using UnityEngine.AI;
+using Random = UnityEngine.Random;
 
 public class Enemy : MonoBehaviour
 {
-    [Header("Enemy Stats")]
+    [Header("Enemy Settings")]
     [SerializeField] private float maxHealth = 10f;
-    [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float damage = 10f;
+    [SerializeField] private float attackDamage = 10f;
+    [SerializeField] private float timeBetweenAttacks = 1f;
+    [SerializeField] private float sightRange;
+    [SerializeField] private float attackRange;
 
+    [Header("Agent Settings")]
+    [SerializeField] private LayerMask groundMask;
+    [SerializeField] private LayerMask playerMask;
+    [SerializeField] private float walkPointRange;
+
+    private NavMeshAgent agent;
     private float currentHealth;
-    private GameObject player; // Reference to the player GameObject
+    private Transform player; // Reference to the player GameObject
+    private Vector3 walkPoint;
+    private bool walkPointSet;
+    private bool attacked = false;
+    private bool playerInSightRange, playerInAttackRange;
 
-    void Awake()
+    private void Awake()
     {
+        player = GameManager.Instance.currentPlayer.transform;
+        agent = gameObject.GetComponent<NavMeshAgent>();
         currentHealth = maxHealth;
-        // Find the player. Ensure your Player GameObject is active and in the scene.
-        // You might tag your player as "Player" for a more robust lookup.
-        player = GameManager.Instance.currentPlayer;
+    }
 
-        if (player == null)
+    private void Update()
+    {
+        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, playerMask);
+        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, playerMask);
+
+        if (!playerInSightRange && !playerInAttackRange) Patroling();
+        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+        if (playerInSightRange && playerInAttackRange) AttackPlayer();
+    }
+
+    private void Patroling()
+    {
+        if (!walkPointSet) SearchWalkPoint();
+
+        if (walkPointSet)
         {
-            Debug.LogError("Enemy: Player GameObject not found! Please ensure your player is tagged 'Player'.");
+            agent.SetDestination(walkPoint);
+        }
+
+        Vector3 distanceToWalkPoint = transform.position - walkPoint;
+
+        if (distanceToWalkPoint.magnitude < 1f) walkPointSet = false;
+    }
+
+    private void SearchWalkPoint()
+    {
+        float randomZ = Random.Range(-walkPointRange, walkPointRange);
+        float randomX = Random.Range(-walkPointRange, walkPointRange);
+
+        walkPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
+
+        if (Physics.Raycast(walkPoint, -transform.up, 2f, groundMask)) walkPointSet = true;
+    }
+
+    private void ChasePlayer()
+    {
+        agent.SetDestination(player.position);
+    }
+
+    private void AttackPlayer()
+    {
+        agent.SetDestination(transform.position);
+
+        transform.LookAt(player);
+
+        if (!attacked)
+        {
+            //TODO: Add the attack logic here. different enemies would have different attacks
+
+            attacked = true;
+            Invoke(nameof(ResetAttack), timeBetweenAttacks);
         }
     }
 
-    void Update()
+    private void ResetAttack()
     {
-        if (player != null)
-        {
-            MoveTowardsPlayer();
-            RotateTowardsPlayer(); // Optional: Make enemy face the player
-        }
+        attacked = false;
     }
 
-    private void MoveTowardsPlayer()
+    public void TakeDamage(float damage)
     {
-        // Calculate direction to player, ignoring Y-axis for 2.5D movement
-        Vector3 directionToPlayer = player.transform.position - transform.position;
-        directionToPlayer.y = 0; // Keep movement on the XZ plane
-        directionToPlayer.Normalize();
+        currentHealth -= damage;
 
-        // Move using transform.position or Rigidbody.MovePosition
-        // Since the Rigidbody is Kinematic, we'll use transform.position for simplicity.
-        // For more complex interactions/physics, Rigidbody.MovePosition is preferred in FixedUpdate.
-        transform.position += directionToPlayer * moveSpeed * Time.deltaTime;
+        if (currentHealth <= 0) Invoke(nameof(DestroyEnemy), 0.5f);
     }
 
-    private void RotateTowardsPlayer()
+    private void DestroyEnemy()
     {
-        // Calculate direction to player, ignoring Y-axis
-        Vector3 directionToPlayer = player.transform.position - transform.position;
-        directionToPlayer.y = 0;
-
-        if (directionToPlayer != Vector3.zero)
-        {
-            // Create a rotation that looks in the directionToPlayer
-            Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
-            // Smoothly rotate towards that direction
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
-        }
-    }
-
-    public void TakeDamage(float damageAmount)
-    {
-        currentHealth -= damageAmount;
-        Debug.Log(gameObject.name + " took " + damageAmount + " damage. Current Health: " + currentHealth);
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
-    }
-
-    private void Die()
-    {
-        Debug.Log(gameObject.name + " died!");
-        // --- TODO: Add death animation, sound, score, drop items, etc. ---
         Destroy(gameObject);
-    }
-
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.tag == "Player")
-        {
-            collision.gameObject.GetComponent<Health>().TakeDamage(damage);
-        }
-    }
-
-    // Optional: Draw a line in the editor to show the enemy's path to player
-    void OnDrawGizmosSelected()
-    {
-        if (player != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, player.transform.position);
-        }
     }
 }

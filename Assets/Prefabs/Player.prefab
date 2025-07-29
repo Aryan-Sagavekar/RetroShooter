@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 4160263952674147488}
   - component: {fileID: 2354921946018817204}
   - component: {fileID: 3606811279857218023}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -201,7 +201,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 824521314795372977}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: bulletSpawn
   m_TagString: Player
   m_Icon: {fileID: 0}

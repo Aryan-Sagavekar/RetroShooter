@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.VisualScripting;
+using Unity.AI.Navigation;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -35,6 +34,7 @@ public class MapGenerator : MonoBehaviour
 
     private TrainingScript trainer;
     private List<Tile> newTiles;
+    private NavMeshSurface navMeshSurface;
 
     public static MapGenerator Instance
     {
@@ -53,12 +53,19 @@ public class MapGenerator : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
 
         trainer = GameObject.Find("GameManager").GetComponent<TrainingScript>();
+        navMeshSurface = GetComponent<NavMeshSurface>();
     }
 
     private void Start()
     {
         newTiles = trainer.ExtractTiles(roomImages[5]);
         GenerateAndInstantiateMap();
+
+        if(navMeshSurface != null)
+        {
+            navMeshSurface.BuildNavMesh();
+            Debug.Log("NavMesh baked for the randomly generated map!");
+        }
     }
 
     private List<Tile> LoadRules(string path)
@@ -133,7 +140,10 @@ public class MapGenerator : MonoBehaviour
                         Instantiate(wallPrefab, worldPos + new Vector3(0, 0.2f, 0), Quaternion.identity, floorParent);
                         break;
                     case "R":
-                        Instantiate(harmfulObjectPrefab, worldPos + new Vector3(0, 1.5f, 0), Quaternion.Euler(90, 0, 0), floorParent);
+                        if (Random.Range(0.0f, 1f) <= 0.70f)
+                        {
+                            Instantiate(harmfulObjectPrefab, worldPos + new Vector3(0, 1.5f, 0), Quaternion.Euler(90, 0, 0), floorParent);
+                        }
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
 

@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     [Header("UI Settings")]
     [SerializeField] private Image healthImage;
     [SerializeField] private Image oxygenImage;
+    [SerializeField] private TextMeshProUGUI ammoText;
 
     void Awake()
     {
@@ -36,5 +37,15 @@ public class UIManager : MonoBehaviour
     public void UpdateOxygenUI(float currentO2)
     {
         oxygenImage.fillAmount = currentO2 / 180f;
+    }
+
+    public void UpdateAmmoUI(int magAmmo, int resAmmo)
+    {
+        ammoText.SetText(magAmmo + " / " + resAmmo);
+    }
+    
+    public void ShowReloading()
+    {
+        ammoText.SetText("Realoding...");
     }
 }

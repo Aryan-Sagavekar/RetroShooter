@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 public class CameraFollow : MonoBehaviour
 {
-    [SerializeField] private float smoothSpeed = 5f;
+    //[SerializeField] private float smoothSpeed = 5f;
 
     // Offset represents the camera's position relative to player in default isometric view
     [SerializeField] private Vector3 defaultOffset = new Vector3(0, 12, -8);
