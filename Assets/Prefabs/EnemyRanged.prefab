@@ -160,8 +160,8 @@ MonoBehaviour:
   maxHealth: 30
   attackDamage: 15
   timeBetweenAttacks: 1
-  sightRange: 10
-  attackRange: 6
+  sightRange: 6
+  attackRange: 5
   groundMask:
     serializedVersion: 2
     m_Bits: 64

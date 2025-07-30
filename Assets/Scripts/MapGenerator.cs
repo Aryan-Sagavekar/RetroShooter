@@ -133,12 +133,12 @@ public class MapGenerator : MonoBehaviour
                         } else
                         {
                             Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
-                            Instantiate(wallPrefab, worldPos + new Vector3(0, 0.2f, 0), Quaternion.identity, floorParent);
+                            Instantiate(wallPrefab, worldPos + new Vector3(0, 0.6f, 0), Quaternion.identity, floorParent);
                         }
                         break;
                     case "W":
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
-                        Instantiate(wallPrefab, worldPos + new Vector3(0, 0.2f, 0), Quaternion.identity, floorParent);
+                        Instantiate(wallPrefab, worldPos + new Vector3(0, 0.6f, 0), Quaternion.identity, floorParent);
                         break;
                     case "R":
                         if (Random.Range(0.0f, 1f) <= 0.70f)

@@ -36,12 +36,15 @@ public class Enemy : MonoBehaviour
 
     private void Update()
     {
-        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, playerMask);
-        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, playerMask);
+        if (currentHealth > 0)
+        {
+            playerInSightRange = Physics.CheckSphere(transform.position, sightRange, playerMask);
+            playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, playerMask);
 
-        if (!playerInSightRange && !playerInAttackRange) Patroling();
-        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-        if (playerInSightRange && playerInAttackRange) AttackPlayer();
+            if (!playerInSightRange && !playerInAttackRange) Patroling();
+            if (playerInSightRange && !playerInAttackRange) ChasePlayer();
+            if (playerInSightRange && playerInAttackRange) AttackPlayer();
+        }
     }
 
     private void Patroling()

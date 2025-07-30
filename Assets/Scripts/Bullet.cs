@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class Bullet : MonoBehaviour
 {
@@ -6,6 +7,7 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float damage = 2f;
     [SerializeField] private bool isPlayer = true;
+    [SerializeField] private GameObject hitEffect;
 
     private Rigidbody rb;
     private GameObject shooter;
@@ -30,6 +32,8 @@ public class Bullet : MonoBehaviour
     {
         if (isPlayer)
         {
+            if (collision.gameObject.CompareTag("Player")) return;
+
             if (collision.gameObject.CompareTag("Enemy"))
             {
                 Enemy enemy = collision.gameObject.GetComponent<Enemy>();
@@ -37,9 +41,16 @@ public class Bullet : MonoBehaviour
                 {
                     enemy.TakeDamage(damage);
                 }
-                Destroy(gameObject);
             }
         }
+
+        if (hitEffect != null)
+        {
+            GameObject effect = Instantiate(hitEffect, collision.contacts[0].point, Quaternion.LookRotation(collision.contacts[0].normal));
+            Destroy(effect, 0.5f);
+        }
+
+        Destroy(gameObject);
     }
 
     void OnTriggerEnter(Collider other)

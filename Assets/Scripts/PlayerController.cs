@@ -23,7 +23,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private FiringMode currentFiringMode = FiringMode.Automatic; // Default mode
     [SerializeField] private float reloadTime = 2f;
     [SerializeField] private Transform weaponPosition;
-
+    [SerializeField] private AudioClip fireSound;
 
     [Header("Burst Fire Settings")]
     [SerializeField] private int burstAmount = 3; // Number of bullets in a burst
@@ -45,13 +45,14 @@ public class PlayerController : MonoBehaviour
     private float nextAvailableShotTime;
     private bool canFireSemiAuto = true;
     private Health playerHealth;
-
+    private AudioSource audioSource;
 
     private void Awake()
     {
         playerControls = new PlayerControls();
         rb = GetComponent<Rigidbody>();
         playerHealth = GetComponent<Health>();
+        audioSource = firePoint.GetComponent<AudioSource>();
         mainCamera = Camera.main;
 
         if (mainCamera == null)
@@ -164,6 +165,10 @@ public class PlayerController : MonoBehaviour
 
         if (bullet != null)
             bullet.Initialize(fireDirection);
+            if (fireSound != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(fireSound);
+            }
         else
             Debug.LogError("Projectile prefab does not have a Bullet script attached!");
 
