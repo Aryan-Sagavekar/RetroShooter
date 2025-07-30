@@ -5,8 +5,12 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float speed = 20f;
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float damage = 2f;
+    [SerializeField] private bool isPlayer = true;
 
     private Rigidbody rb;
+    private GameObject shooter;
+
+    public GameObject Shooter { get { return shooter; } set { shooter = value; } }
 
     void Awake()
     {
@@ -24,16 +28,18 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        if (isPlayer)
         {
-            Enemy enemy = collision.gameObject.GetComponent<Enemy>();
-            if (enemy != null)
+            if (collision.gameObject.CompareTag("Enemy"))
             {
-                enemy.TakeDamage(damage);
+                Enemy enemy = collision.gameObject.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    enemy.TakeDamage(damage);
+                }
+                Destroy(gameObject);
             }
-            Destroy(gameObject);
         }
-
     }
 
     void OnTriggerEnter(Collider other)

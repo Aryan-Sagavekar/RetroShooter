@@ -1260,7 +1260,9 @@ MonoBehaviour:
   minRoomSize: 20
   maxRoomSize: 30
   floorPrefab: {fileID: 5495931254748323800, guid: a71cd2235cc28cc48b9859b3a2168245, type: 3}
-  enemyPrefab: {fileID: 8411147514143806806, guid: e4b7498627578134b9a7e11cfbbd35b3, type: 3}
+  enemyPrefab:
+  - {fileID: 8411147514143806806, guid: e4b7498627578134b9a7e11cfbbd35b3, type: 3}
+  - {fileID: 8411147514143806806, guid: 33282d17f82e26d4eae74079a53aabcf, type: 3}
   collectablePrefab: {fileID: 544510089016197163, guid: 21ab32e0dc0fe1e46ba9ad414c86711c, type: 3}
   harmfulObjectPrefab: {fileID: 8543606656787732233, guid: 58fe8dc2ebcca4349b49dc6dc6c5a101, type: 3}
   wallPrefab: {fileID: 7030681753872692274, guid: 38a77adb9db7d55499d8f2a78c0d6093, type: 3}

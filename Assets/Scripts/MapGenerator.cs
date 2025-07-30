@@ -21,7 +21,7 @@ public class MapGenerator : MonoBehaviour
 
     [Header("Required Objects")]
     [SerializeField] private GameObject floorPrefab;
-    [SerializeField] private GameObject enemyPrefab;
+    [SerializeField] private GameObject[] enemyPrefab;
     [SerializeField] private GameObject collectablePrefab;
     [SerializeField] private GameObject harmfulObjectPrefab;
     [SerializeField] private GameObject wallPrefab;
@@ -106,7 +106,8 @@ public class MapGenerator : MonoBehaviour
                         break;
                     case "ES":
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
-                        Instantiate(enemyPrefab, worldPos + new Vector3(0f, 0.2f, 0f), Quaternion.identity);
+                        int randomEnemy = Random.Range(0f, 1f) <= 0.65f ? 0 : 1;
+                        Instantiate(enemyPrefab[randomEnemy], worldPos + new Vector3(0f, 0.2f, 0f), Quaternion.identity);
                         break;
                     case "C":
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);

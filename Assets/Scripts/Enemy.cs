@@ -18,6 +18,7 @@ public class Enemy : MonoBehaviour
     [SerializeField] private float walkPointRange;
 
     private NavMeshAgent agent;
+    private EnemyBehaviour enemyBehaviour;
     private float currentHealth;
     private Transform player; // Reference to the player GameObject
     private Vector3 walkPoint;
@@ -30,6 +31,7 @@ public class Enemy : MonoBehaviour
         player = GameManager.Instance.currentPlayer.transform;
         agent = gameObject.GetComponent<NavMeshAgent>();
         currentHealth = maxHealth;
+        enemyBehaviour = gameObject.GetComponent<EnemyBehaviour>();
     }
 
     private void Update()
@@ -80,6 +82,7 @@ public class Enemy : MonoBehaviour
         if (!attacked)
         {
             //TODO: Add the attack logic here. different enemies would have different attacks
+            enemyBehaviour.PerformAttack(attackDamage, player.transform);
 
             attacked = true;
             Invoke(nameof(ResetAttack), timeBetweenAttacks);
@@ -102,4 +105,6 @@ public class Enemy : MonoBehaviour
     {
         Destroy(gameObject);
     }
+
+    public float AttackDamage => attackDamage;
 }

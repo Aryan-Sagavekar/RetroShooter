@@ -44,12 +44,14 @@ public class PlayerController : MonoBehaviour
     private int bulletsFiredInBurst;
     private float nextAvailableShotTime;
     private bool canFireSemiAuto = true;
+    private Health playerHealth;
 
 
     private void Awake()
     {
         playerControls = new PlayerControls();
         rb = GetComponent<Rigidbody>();
+        playerHealth = GetComponent<Health>();
         mainCamera = Camera.main;
 
         if (mainCamera == null)
@@ -274,6 +276,19 @@ public class PlayerController : MonoBehaviour
                 Quaternion targetRotation = Quaternion.LookRotation(directionToLook);
                 transform.rotation = targetRotation;
             }
+        }
+    }
+
+    private void OnTriggerEnter(Collider hitbox)
+    {
+        if (hitbox.gameObject.CompareTag("EnemyHitbox"))
+        {
+            Bullet check = hitbox.gameObject.GetComponent<Bullet>();
+            Enemy e = check != null ? check.Shooter.GetComponentInParent<Enemy>() : hitbox.gameObject.GetComponentInParent<Enemy>();            if (check != null)
+            {
+                Destroy(hitbox.gameObject);
+            }
+            playerHealth.TakeDamage(e.AttackDamage);
         }
     }
 }
