@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6493046785915351297}
   - component: {fileID: 8260234948891148732}
   - component: {fileID: 7210022179692421249}
+  - component: {fileID: 6730364371465745508}
   - component: {fileID: 4107002921669592743}
   - component: {fileID: 4407768543903922304}
   - component: {fileID: 4160263952674147488}
@@ -92,6 +93,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!95 &6730364371465745508
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1266208020928531966}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4d08d9bf2e73b7a44b8e05b859aca844, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &4107002921669592743
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,7 +137,6 @@ MonoBehaviour:
   reloadTime: 2
   weaponPosition: {fileID: 0}
   fireSound: {fileID: 8300000, guid: 78fa9a2030fc98d469a6e057bbc94bc3, type: 3}
-  audioSource: {fileID: 0}
   burstAmount: 3
   burstInterval: 0.05
   burstCooldown: 0.5
