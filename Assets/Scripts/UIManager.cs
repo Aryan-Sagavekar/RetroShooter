@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Image oxygenImage;
     [SerializeField] private TextMeshProUGUI ammoText;
     [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI winScreen;
 
     void Awake()
     {
@@ -21,7 +24,7 @@ public class UIManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        //DontDestroyOnLoad(gameObject);
     }
 
     void Start()
@@ -54,5 +57,19 @@ public class UIManager : MonoBehaviour
     public void UpdatePartsCount()
     {
         scoreText.SetText("Parts: " + GameManager.Instance.parts);
+    }
+
+    public void ShowWinScreen()
+    {
+        winScreen.enabled = true;
+        winScreen.text = "Your score: " + GameManager.Instance.parts + "\nWinner";
+        StartCoroutine(WinSequence());
+    }
+
+    private IEnumerator WinSequence()
+    {
+        yield return new WaitForSeconds(3f); // wait before restarting
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

@@ -25,6 +25,7 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private GameObject collectablePrefab;
     [SerializeField] private GameObject harmfulObjectPrefab;
     [SerializeField] private GameObject wallPrefab;
+    [SerializeField] private GameObject extractionPrefab;
     [SerializeField] private Transform floorParent;
     [SerializeField] private GameObject player;
 
@@ -50,7 +51,7 @@ public class MapGenerator : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(this.gameObject);
+        //DontDestroyOnLoad(this.gameObject);
 
         trainer = GameObject.Find("GameManager").GetComponent<TrainingScript>();
         navMeshSurface = GetComponent<NavMeshSurface>();
@@ -66,21 +67,6 @@ public class MapGenerator : MonoBehaviour
             navMeshSurface.BuildNavMesh();
             Debug.Log("NavMesh baked for the randomly generated map!");
         }
-    }
-
-    private List<Tile> LoadRules(string path)
-    {
-        if (!File.Exists(path)) return null;
-
-        string json = File.ReadAllText(path);
-        List<Tile> tiles = JsonUtility.FromJson<List<Tile>>(json);
-        return tiles;
-    }
-
-    private void SaveRules(List<Tile> tiles, string path)
-    {
-        string json = JsonUtility.ToJson(tiles, true);
-        File.WriteAllText(path, json);
     }
 
     private void GenerateAndInstantiateMap()
@@ -153,6 +139,11 @@ public class MapGenerator : MonoBehaviour
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
 
+                    case "G":
+                        Instantiate(extractionPrefab, worldPos + new Vector3(0, 0.6f, 0), Quaternion.identity);
+                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                        break;
+
                     default: break;
                 }
             }
@@ -162,7 +153,23 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        
+        // Create kill zone plane below map
+        GameObject killZone = new GameObject("KillZone");
+        BoxCollider killCollider = killZone.AddComponent<BoxCollider>();
+        killCollider.isTrigger = true;
+
+        // Position and scale based on map size
+        float killZoneHeight = -5f;
+        Vector3 killCenter = new Vector3(mapSize.x / 2f, killZoneHeight, mapSize.y / 2f);
+        Vector3 killSize = new Vector3(mapSize.x * 2f, 1f, mapSize.y * 2f);
+
+        killCollider.center = Vector3.zero;
+        killCollider.size = killSize;
+
+        killZone.transform.position = killCenter;
+        killZone.layer = LayerMask.NameToLayer("Ignore Raycast");
+        killZone.tag = "DeadZone";
+
     }
 
     protected HashSet<Vector2Int> RandomWalk()
@@ -181,4 +188,27 @@ public class MapGenerator : MonoBehaviour
 
         return floorPositions;
     }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            instance = null;
+        }
+
+        // Optional: clean up generated content
+        if (navMeshSurface != null)
+        {
+            Destroy(navMeshSurface.navMeshData); // Destroy the generated NavMesh data
+            navMeshSurface.RemoveData(); // Clear baked NavMesh from scene
+            navMeshSurface = null;
+            Debug.Log("NavMeshSurface destroyed.");
+        }
+
+        newTiles = null;
+        trainer = null;
+
+        Debug.Log("MapGenerator destroyed.");
+    }
+
 }

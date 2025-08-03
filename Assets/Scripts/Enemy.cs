@@ -28,18 +28,18 @@ public class Enemy : MonoBehaviour
     private bool playerInSightRange, playerInAttackRange;
 
     // Animation parameter names (make sure these match your Animator Controller)
-    private readonly string SPEED_PARAM = "Speed";
     private readonly string IS_RUNNING_PARAM = "IsRunning";
     private readonly string ATTACK_TRIGGER = "Attack";
     private readonly string IS_DEAD_PARAM = "IsDead";
 
     // Current state tracking
-    private EnemyState currentState = EnemyState.Patrolling;
+    private EnemyState currentState = EnemyState.Idle;
 
     private enum EnemyState
     {
-        Patrolling,
-        Chasing,
+        Idle,
+        Walking,
+        Running,
         Attacking,
         Dead
     }
@@ -67,12 +67,11 @@ public class Enemy : MonoBehaviour
 
             if (!playerInSightRange && !playerInAttackRange)
             {
-                SetState(EnemyState.Patrolling);
                 Patroling();
             }
             if (playerInSightRange && !playerInAttackRange)
             {
-                SetState(EnemyState.Chasing);
+                SetState(EnemyState.Running);
                 ChasePlayer();
             }
             if (playerInSightRange && playerInAttackRange)
@@ -80,8 +79,6 @@ public class Enemy : MonoBehaviour
                 SetState(EnemyState.Attacking);
                 AttackPlayer();
             }
-
-            UpdateAnimations();
         }
     }
 
@@ -90,29 +87,29 @@ public class Enemy : MonoBehaviour
         if (currentState != newState)
         {
             currentState = newState;
-            OnStateChanged(newState);
+            UpdateAnimationState(newState);
         }
     }
 
-    private void OnStateChanged(EnemyState newState)
+    private void UpdateAnimationState(EnemyState state)
     {
         if (animator == null) return;
 
-        // Reset all animation bools first
+        // Reset all animation bools and triggers
         animator.SetBool(IS_RUNNING_PARAM, false);
 
-        switch (newState)
+        switch (state)
         {
-            case EnemyState.Patrolling:
-                // Walking animation will be handled by Speed parameter
+            case EnemyState.Idle:
+                // All bools are false = idle animation plays
                 break;
 
-            case EnemyState.Chasing:
+            case EnemyState.Running:
                 animator.SetBool(IS_RUNNING_PARAM, true);
                 break;
 
             case EnemyState.Attacking:
-                // Attack animation will be triggered in AttackPlayer method
+                // Attack trigger will be set in AttackPlayer method
                 break;
 
             case EnemyState.Dead:
@@ -121,28 +118,35 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void UpdateAnimations()
-    {
-        if (animator == null) return;
-
-        // Update speed parameter based on agent velocity
-        float speed = agent.velocity.magnitude;
-        float normalizedSpeed = speed / agent.speed; // Normalize to 0-1 range
-        animator.SetFloat(SPEED_PARAM, normalizedSpeed);
-    }
-
     private void Patroling()
     {
-        if (!walkPointSet) SearchWalkPoint();
+        if (!walkPointSet)
+        {
+            SearchWalkPoint();
+            SetState(EnemyState.Idle);
+        }
 
         if (walkPointSet)
         {
             agent.SetDestination(walkPoint);
+
+            // Check if agent is moving to determine walk vs idle
+            if (agent.velocity.magnitude > 0.1f)
+            {
+                SetState(EnemyState.Walking);
+            }
+            else
+            {
+                SetState(EnemyState.Idle);
+            }
         }
 
         Vector3 distanceToWalkPoint = transform.position - walkPoint;
         if (distanceToWalkPoint.magnitude < 1f)
+        {
             walkPointSet = false;
+            SetState(EnemyState.Idle);
+        }
     }
 
     private void SearchWalkPoint()
@@ -211,20 +215,23 @@ public class Enemy : MonoBehaviour
     // Optional: Animation Events (call these from animation events in your attack animation)
     public void OnAttackStart()
     {
-        // Called at the start of attack animation
         Debug.Log("Attack animation started");
     }
 
     public void OnAttackHit()
     {
-        // Called at the moment the attack should deal damage
-        // You can move the actual damage dealing logic here if you want frame-perfect timing
         Debug.Log("Attack hit frame");
     }
 
     public void OnAttackEnd()
     {
-        // Called at the end of attack animation
         Debug.Log("Attack animation ended");
     }
+
+    private void OnDestroy()
+    {
+        CancelInvoke(); 
+        Debug.Log($"{gameObject.name} destroyed");
+    }
+
 }

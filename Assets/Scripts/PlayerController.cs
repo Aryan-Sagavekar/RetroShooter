@@ -350,5 +350,10 @@ public class PlayerController : MonoBehaviour
             }
             playerHealth.TakeDamage(e.AttackDamage);
         }
+
+        if (hitbox.gameObject.CompareTag("DeadZone"))
+        {
+            playerHealth.TakeDamage(9999);
+        }
     }
 }

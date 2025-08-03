@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System;
 
 public class Health : MonoBehaviour
@@ -38,6 +39,8 @@ public class Health : MonoBehaviour
     {
         Debug.Log($"{gameObject.name} died.");
         OnDeath?.Invoke();
-        // You can add Destroy(gameObject) or ragdoll/spawn FX here
+
+        // Restart current scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

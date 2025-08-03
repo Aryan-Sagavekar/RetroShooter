@@ -55,6 +55,9 @@ public class RandomGenerator
 
         CalculateEntitySpawns(rooms, detailedMap);
 
+        RectInt finalRoom = rooms[rooms.Count - 1];
+        detailedMap[new Vector2Int(finalRoom.x + finalRoom.width / 2, finalRoom.y + finalRoom.height / 2)] = "G";
+
         return new KeyValuePair<HashSet<Vector2Int>, Dictionary<Vector2Int, string>>(map, detailedMap);
     }
 
