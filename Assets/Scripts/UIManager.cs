@@ -10,6 +10,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Image healthImage;
     [SerializeField] private Image oxygenImage;
     [SerializeField] private TextMeshProUGUI ammoText;
+    [SerializeField] private TextMeshProUGUI scoreText;
 
     void Awake()
     {
@@ -47,5 +48,11 @@ public class UIManager : MonoBehaviour
     public void ShowReloading()
     {
         ammoText.SetText("Realoding...");
+    }
+
+
+    public void UpdatePartsCount()
+    {
+        scoreText.SetText("Parts: " + GameManager.Instance.parts);
     }
 }

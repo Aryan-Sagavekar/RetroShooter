@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float rollForce = 8f;
+    [SerializeField] private float rollDuration = 0.5f;
 
     [Header("Weapon and Combat Settings")]
     [SerializeField] private GameObject projectilePrefab;
@@ -35,6 +37,7 @@ public class PlayerController : MonoBehaviour
     private Vector2 movementInput;
     private Rigidbody rb;
     private Camera mainCamera;
+    private Animator animator;
 
     // Weapon
     private bool isReloading = false;
@@ -46,6 +49,8 @@ public class PlayerController : MonoBehaviour
     private bool canFireSemiAuto = true;
     private Health playerHealth;
     private AudioSource audioSource;
+    private bool isRolling = false;
+    private bool iFrames = false;
 
     private void Awake()
     {
@@ -67,12 +72,44 @@ public class PlayerController : MonoBehaviour
         playerControls.Player.Shoot.canceled += ctx => OnFireCanceled();
 
         playerControls.Player.Reload.performed += ctx => OnReloadPerformed();
+        playerControls.Player.Dodge.performed += ctx => OnRollPerformed();
+
 
         currentAmmo = magazineSize;
         currentReserveAmmo = reserveSize;
 
         UIManager.Instance.UpdateAmmoUI(currentAmmo, currentReserveAmmo);
+        animator = GetComponentInChildren<Animator>();
     }
+
+    private void OnRollPerformed()
+    {
+        if (isRolling || isReloading || movementInput == Vector2.zero) return;
+
+        animator.SetTrigger("Roll");
+        StartCoroutine(PerformRoll());
+    }
+
+    private IEnumerator PerformRoll()
+    {
+        isRolling = true;
+        iFrames = true;
+
+        Vector3 rollDirection = new Vector3(movementInput.x, 0, movementInput.y).normalized;
+        Vector3 worldDirection = transform.TransformDirection(rollDirection);
+
+        float elapsedTime = 0f;
+        while (elapsedTime < rollDuration)
+        {
+            rb.linearVelocity = new Vector3(worldDirection.x * rollForce, rb.linearVelocity.y, worldDirection.z * rollForce);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        isRolling = false;
+        iFrames = false;
+    }
+
 
     private void OnEnable()
     {
@@ -248,19 +285,37 @@ public class PlayerController : MonoBehaviour
     private void HandleMovement()
     {
         // Local (relative to player) movement control
+        if (isRolling) return;
+
         Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y);
+        float speedPercent = 0f;
 
         if (moveDirection.sqrMagnitude > 0.01f)
         {
             moveDirection = moveDirection.normalized;
             Vector3 worldMoveDirection = transform.TransformDirection(moveDirection);
-            rb.linearVelocity = new Vector3(worldMoveDirection.x * moveSpeed, rb.linearVelocity.y, worldMoveDirection.z * moveSpeed);
+
+            // Use AddForce or MovePosition instead of directly setting velocity
+            Vector3 targetVelocity = new Vector3(worldMoveDirection.x * moveSpeed, rb.linearVelocity.y, worldMoveDirection.z * moveSpeed);
+            rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, targetVelocity, Time.fixedDeltaTime * 10f);
+
+            speedPercent = worldMoveDirection.magnitude;
         }
         else
         {
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            // Apply friction/drag when not moving
+            Vector3 horizontalVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+            horizontalVelocity = Vector3.Lerp(horizontalVelocity, Vector3.zero, Time.fixedDeltaTime * 15f);
+            rb.linearVelocity = new Vector3(horizontalVelocity.x, rb.linearVelocity.y, horizontalVelocity.z);
+        }
+
+        // Update animator parameter for smooth blend
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", speedPercent, 0.1f, Time.deltaTime);
         }
     }
+
 
     private void HandleAiming()
     {
@@ -286,7 +341,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider hitbox)
     {
-        if (hitbox.gameObject.CompareTag("EnemyHitbox"))
+        if (hitbox.gameObject.CompareTag("EnemyHitbox") && !iFrames)
         {
             Bullet check = hitbox.gameObject.GetComponent<Bullet>();
             Enemy e = check != null ? check.Shooter.GetComponentInParent<Enemy>() : hitbox.gameObject.GetComponentInParent<Enemy>();            if (check != null)

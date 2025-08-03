@@ -113,12 +113,17 @@ public class MapGenerator : MonoBehaviour
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
                     case "P":
+                        if (Random.Range(0.0f, 1f) <= 0.05f)
+                        {
+                            Instantiate(collectablePrefab, worldPos + new Vector3(0, 0.4f, 0), Quaternion.Euler(0, 0, 90));
+                        }
                         Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
                         break;
-                    case "I":
-                        Instantiate(collectablePrefab, worldPos + new Vector3(0, 0.4f, 0), Quaternion.identity);
-                        Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
-                        break;
+                    //case "I":
+                    //    Debug.Log("Item found");
+                    //    Instantiate(collectablePrefab, worldPos + new Vector3(0, 0.4f, 0), Quaternion.identity);
+                    //    Instantiate(floorPrefab, worldPos, Quaternion.identity, floorParent);
+                    //    break;
                     case "H":
                         //Instantiate(floorPrefab, worldPos - new Vector3(0, 1f, 0), Quaternion.identity, floorParent);
                         if (Random.Range(0.0f, 1f) >= 0.50f)
@@ -141,7 +146,7 @@ public class MapGenerator : MonoBehaviour
                         Instantiate(wallPrefab, worldPos + new Vector3(0, 0.6f, 0), Quaternion.identity, floorParent);
                         break;
                     case "R":
-                        if (Random.Range(0.0f, 1f) <= 0.70f)
+                        if (Random.Range(0.0f, 1f) <= 0.40f)
                         {
                             Instantiate(harmfulObjectPrefab, worldPos + new Vector3(0, 1.5f, 0), Quaternion.Euler(90, 0, 0), floorParent);
                         }

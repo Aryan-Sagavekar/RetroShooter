@@ -167,7 +167,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""Sprint"",
                     ""type"": ""Button"",
                     ""id"": ""641cd816-40e6-41b4-8c3d-04687c349290"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -189,6 +189,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Dodge"",
+                    ""type"": ""Button"",
+                    ""id"": ""2ed0a546-f456-4a24-8c97-00dcf04c70f0"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -629,6 +638,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": "";Gamepad"",
                     ""action"": ""SwitchWeapon"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""65e63af4-05b5-4471-8600-d790deb6be08"",
+                    ""path"": ""<Keyboard>/ctrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Dodge"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1227,6 +1247,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
         m_Player_Reload = m_Player.FindAction("Reload", throwIfNotFound: true);
         m_Player_SwitchWeapon = m_Player.FindAction("SwitchWeapon", throwIfNotFound: true);
+        m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1331,6 +1352,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Sprint;
     private readonly InputAction m_Player_Reload;
     private readonly InputAction m_Player_SwitchWeapon;
+    private readonly InputAction m_Player_Dodge;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1386,6 +1408,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/SwitchWeapon".
         /// </summary>
         public InputAction @SwitchWeapon => m_Wrapper.m_Player_SwitchWeapon;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Dodge".
+        /// </summary>
+        public InputAction @Dodge => m_Wrapper.m_Player_Dodge;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1445,6 +1471,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @SwitchWeapon.started += instance.OnSwitchWeapon;
             @SwitchWeapon.performed += instance.OnSwitchWeapon;
             @SwitchWeapon.canceled += instance.OnSwitchWeapon;
+            @Dodge.started += instance.OnDodge;
+            @Dodge.performed += instance.OnDodge;
+            @Dodge.canceled += instance.OnDodge;
         }
 
         /// <summary>
@@ -1489,6 +1518,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @SwitchWeapon.started -= instance.OnSwitchWeapon;
             @SwitchWeapon.performed -= instance.OnSwitchWeapon;
             @SwitchWeapon.canceled -= instance.OnSwitchWeapon;
+            @Dodge.started -= instance.OnDodge;
+            @Dodge.performed -= instance.OnDodge;
+            @Dodge.canceled -= instance.OnDodge;
         }
 
         /// <summary>
@@ -1866,6 +1898,13 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSwitchWeapon(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Dodge" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDodge(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.
